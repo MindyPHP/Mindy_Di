@@ -8,9 +8,10 @@
 namespace Mindy\Di;
 
 use Closure;
-use Mindy\Core\Object;
 use Mindy\Exception\InvalidConfigException;
 use Mindy\Helper\Creator;
+use Mindy\Helper\Traits\Accessors;
+use Mindy\Helper\Traits\Configurator;
 
 /**
  * ServiceLocator implements a [service locator](http://en.wikipedia.org/wiki/Service_locator_pattern).
@@ -47,8 +48,10 @@ use Mindy\Helper\Creator;
  * @author Qiang Xue <qiang.xue@gmail.com>
  * @since 2.0
  */
-class ServiceLocator extends Object
+class ServiceLocator
 {
+    use Accessors, Configurator;
+
     /**
      * @var array shared component instances indexed by their IDs
      */
@@ -69,7 +72,7 @@ class ServiceLocator extends Object
         if ($this->has($name)) {
             return $this->get($name);
         } else {
-            return parent::__get($name);
+            return $this->__getInternal($name);
         }
     }
 
@@ -84,7 +87,7 @@ class ServiceLocator extends Object
         if ($this->has($name, true)) {
             return true;
         } else {
-            return parent::__isset($name);
+            return $this->__issetInternal($name);
         }
     }
 
