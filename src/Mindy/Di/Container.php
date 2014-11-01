@@ -1,14 +1,10 @@
 <?php
-/**
- * @link http://www.yiiframework.com/
- * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
- */
 
 namespace Mindy\Di;
 
+use Mindy\Helper\Traits\Accessors;
+use Mindy\Helper\Traits\Configurator;
 use ReflectionClass;
-use Mindy\Core\Object;
 use Mindy\Exception\InvalidConfigException;
 
 /**
@@ -93,8 +89,10 @@ use Mindy\Exception\InvalidConfigException;
  * @author Qiang Xue <qiang.xue@gmail.com>
  * @since 2.0
  */
-class Container extends Object
+class Container
 {
+    use Accessors, Configurator;
+
     /**
      * @var array singleton objects indexed by their types
      */
@@ -357,7 +355,7 @@ class Container extends Object
             $dependencies[$index] = $param;
         }
 
-        if (!empty($dependencies) && is_a($class, 'yii\base\Object', true)) {
+        if (!empty($dependencies) && ($class instanceof Accessors || $class instanceof Configurator)) {
             // set $config as the last parameter (existing one will be overwritten)
             $dependencies[count($dependencies) - 1] = $config;
             $dependencies = $this->resolveDependencies($dependencies, $reflection);
