@@ -47,6 +47,7 @@ use Mindy\Helper\Traits\Configurator;
  *
  * @author Qiang Xue <qiang.xue@gmail.com>
  * @since 2.0
+ * @package Mindy\Di
  */
 class ServiceLocator
 {

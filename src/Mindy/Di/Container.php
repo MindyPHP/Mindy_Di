@@ -88,6 +88,7 @@ use Mindy\Exception\InvalidConfigException;
  *
  * @author Qiang Xue <qiang.xue@gmail.com>
  * @since 2.0
+ * @package Mindy\Di
  */
 class Container
 {
