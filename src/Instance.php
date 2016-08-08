@@ -7,8 +7,7 @@
 
 namespace Mindy\Di;
 
-use Mindy\Base\Mindy;
-use Mindy\Exception\InvalidConfigException;
+use Exception;
 
 /**
  * Instance represents a reference to a named object in a dependency injection (DI) container or a service locator.
@@ -57,24 +56,31 @@ class Instance
      * @var string the component ID, class name, interface name or alias name
      */
     public $id;
+    /**
+     * @var callable
+     */
+    protected $fetcher;
 
     /**
      * Constructor.
      * @param string $id the component ID
+     * @param callable $fetcher
      */
-    protected function __construct($id)
+    protected function __construct($id, callable $fetcher = null)
     {
         $this->id = $id;
+        $this->fetcher = $fetcher;
     }
 
     /**
      * Creates a new Instance object.
      * @param string $id the component ID
+     * @param callable $fetcher
      * @return Instance the new Instance object.
      */
-    public static function of($id)
+    public static function of($id, callable $fetcher = null)
     {
-        return new static($id);
+        return new static($id, $fetcher);
     }
 
     /**
@@ -102,14 +108,14 @@ class Instance
      * @param string $type the class/interface name to be checked. If null, type check will not be performed.
      * @param ServiceLocator|Container $container the container. This will be passed to [[get()]].
      * @return object the object referenced by the Instance, or `$reference` itself if it is an object.
-     * @throws InvalidConfigException if the reference is invalid
+     * @throws Exception if the reference is invalid
      */
     public static function ensure($reference, $type = null, $container = null)
     {
         if ($reference instanceof $type) {
             return $reference;
         } elseif (empty($reference)) {
-            throw new InvalidConfigException('The required component is not specified.');
+            throw new Exception('The required component is not specified.');
         }
 
         if (is_string($reference)) {
@@ -121,12 +127,12 @@ class Instance
             if ($component instanceof $type || $type === null) {
                 return $component;
             } else {
-                throw new InvalidConfigException('"' . $reference->id . '" refers to a ' . get_class($component) . " component. $type is expected.");
+                throw new Exception('"' . $reference->id . '" refers to a ' . get_class($component) . " component. $type is expected.");
             }
         }
 
         $valueType = is_object($reference) ? get_class($reference) : gettype($reference);
-        throw new InvalidConfigException("Invalid data type: $valueType. $type is expected.");
+        throw new Exception("Invalid data type: $valueType. $type is expected.");
     }
 
     /**
@@ -139,10 +145,9 @@ class Instance
     {
         if ($container) {
             return $container->get($this->id);
+        } else if ($fetcher = $this->fetcher) {
+            return $fetcher($this->id);
         }
-        
-        if (Mindy::app() && Mindy::app()->locator->has($this->id)) {
-            return Mindy::app()->locator->get($this->id);
-        }
+        return null;
     }
 }

@@ -1,58 +1,17 @@
 <?php
-/**
- * @link http://www.yiiframework.com/
- * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
- */
 
 namespace Mindy\Di;
 
 use Closure;
-use Mindy\Exception\InvalidConfigException;
+use Exception;
 use Mindy\Helper\Creator;
-use Mindy\Helper\Traits\Accessors;
-use Mindy\Helper\Traits\Configurator;
 
 /**
- * ServiceLocator implements a [service locator](http://en.wikipedia.org/wiki/Service_locator_pattern).
- *
- * To use ServiceLocator, you first need to register component IDs with the corresponding component
- * definitions with the locator by calling [[set()]] or [[setComponents()]].
- * You can then call [[get()]] to retrieve a component with the specified ID. The locator will automatically
- * instantiate and configure the component according to the definition.
- *
- * For example,
- *
- * ```php
- * $locator = new \yii\di\ServiceLocator;
- * $locator->setComponents([
- *     'db' => [
- *         'class' => 'yii\db\Connection',
- *         'dsn' => 'sqlite:path/to/file.db',
- *     ],
- *     'cache' => [
- *         'class' => 'yii\caching\DbCache',
- *         'db' => 'db',
- *     ],
- * ]);
- *
- * $db = $locator->get('db');  // or $locator->db
- * $cache = $locator->get('cache');  // or $locator->cache
- * ```
- *
- * Because [[\yii\base\Module]] extends from ServiceLocator, modules and the application are all service locators.
- *
- * @property array $components The list of the component definitions or the loaded component instances (ID =>
- * definition or instance).
- *
- * @author Qiang Xue <qiang.xue@gmail.com>
- * @since 2.0
+ * Class ServiceLocator
  * @package Mindy\Di
  */
 class ServiceLocator
 {
-    use Accessors, Configurator;
-
     /**
      * @var array shared component instances indexed by their IDs
      */
@@ -63,6 +22,15 @@ class ServiceLocator
     private $_definitions = [];
 
     /**
+     * ServiceLocator constructor.
+     * @param array $definitions
+     */
+    public function __construct(array $definitions = [])
+    {
+        $this->_definitions = $definitions;
+    }
+
+    /**
      * Getter magic method.
      * This method is overridden to support accessing components like reading properties.
      * @param string $name component or property name
@@ -70,11 +38,7 @@ class ServiceLocator
      */
     public function __get($name)
     {
-        if ($this->has($name)) {
-            return $this->get($name);
-        } else {
-            return $this->__getInternal($name);
-        }
+        return $this->get($name);
     }
 
     /**
@@ -85,11 +49,7 @@ class ServiceLocator
      */
     public function __isset($name)
     {
-        if ($this->has($name, true)) {
-            return true;
-        } else {
-            return $this->__issetInternal($name);
-        }
+        return $this->has($name, true);
     }
 
     /**
@@ -118,7 +78,7 @@ class ServiceLocator
      * @param boolean $throwException whether to throw an exception if `$id` is not registered with the locator before.
      * @return object|null the component of the specified ID. If `$throwException` is false and `$id`
      * is not registered before, null will be returned.
-     * @throws InvalidConfigException if `$id` refers to a nonexistent component ID
+     * @throws Exception if `$id` refers to a nonexistent component ID
      * @see has()
      * @see set()
      */
@@ -130,13 +90,15 @@ class ServiceLocator
 
         if (isset($this->_definitions[$id])) {
             $definition = $this->_definitions[$id];
-            if (is_object($definition) && !$definition instanceof Closure) {
+            if ($definition instanceof Closure) {
+                return $this->_components[$id] = $definition->__invoke();
+            } else if (is_object($definition)) {
                 return $this->_components[$id] = $definition;
             } else {
                 return $this->_components[$id] = Creator::createObject($definition);
             }
         } elseif ($throwException) {
-            throw new InvalidConfigException("Unknown component ID: $id");
+            throw new Exception("Unknown component ID: $id");
         } else {
             return null;
         }
@@ -183,7 +145,7 @@ class ServiceLocator
      *   The callable will be called by [[get()]] to return an object associated with the specified component ID.
      * - an object: When [[get()]] is called, this object will be returned.
      *
-     * @throws InvalidConfigException if the definition is an invalid configuration array
+     * @throws Exception if the definition is an invalid configuration array
      */
     public function set($id, $definition)
     {
@@ -202,10 +164,10 @@ class ServiceLocator
             if (isset($definition['class'])) {
                 $this->_definitions[$id] = $definition;
             } else {
-                throw new InvalidConfigException("The configuration for the \"$id\" component must contain a \"class\" element.");
+                throw new Exception("The configuration for the \"$id\" component must contain a \"class\" element.");
             }
         } else {
-            throw new InvalidConfigException("Unexpected configuration type for the \"$id\" component: " . gettype($definition));
+            throw new Exception("Unexpected configuration type for the \"$id\" component: " . gettype($definition));
         }
     }
 

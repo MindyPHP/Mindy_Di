@@ -2,10 +2,10 @@
 
 namespace Mindy\Di;
 
+use Exception;
 use Mindy\Helper\Traits\Accessors;
 use Mindy\Helper\Traits\Configurator;
 use ReflectionClass;
-use Mindy\Exception\InvalidConfigException;
 
 /**
  * Container implements a [dependency injection](http://en.wikipedia.org/wiki/Dependency_injection) container.
@@ -92,8 +92,6 @@ use Mindy\Exception\InvalidConfigException;
  */
 class Container
 {
-    use Accessors, Configurator;
-
     /**
      * @var array singleton objects indexed by their types
      */
@@ -116,7 +114,6 @@ class Container
      */
     private $_dependencies = [];
 
-
     /**
      * Returns an instance of the requested class.
      *
@@ -135,7 +132,7 @@ class Container
      * ones with the integers that represent their positions in the constructor parameter list.
      * @param array $config a list of name-value pairs that will be used to initialize the object properties.
      * @return object an instance of the requested class.
-     * @throws InvalidConfigException if the class cannot be recognized or correspond to an invalid definition
+     * @throws Exception if the class cannot be recognized or correspond to an invalid definition
      */
     public function get($class, $params = [], $config = [])
     {
@@ -166,7 +163,7 @@ class Container
         } elseif (is_object($definition)) {
             return $this->_singletons[$class] = $definition;
         } else {
-            throw new InvalidConfigException("Unexpected object definition type: " . gettype($definition));
+            throw new Exception("Unexpected object definition type: " . gettype($definition));
         }
 
         if (array_key_exists($class, $this->_singletons)) {
@@ -305,7 +302,7 @@ class Container
      * @param string $class class name
      * @param string|array|callable $definition the class definition
      * @return array the normalized class definition
-     * @throws InvalidConfigException if the definition is invalid.
+     * @throws Exception if the definition is invalid.
      */
     protected function normalizeDefinition($class, $definition)
     {
@@ -320,12 +317,12 @@ class Container
                 if (strpos($class, '\\') !== false) {
                     $definition['class'] = $class;
                 } else {
-                    throw new InvalidConfigException("A class definition requires a \"class\" member.");
+                    throw new Exception("A class definition requires a 'class' member.");
                 }
             }
             return $definition;
         } else {
-            throw new InvalidConfigException("Unsupported definition type for \"$class\": " . gettype($definition));
+            throw new Exception("Unsupported definition type for " . $class . ": " . gettype($definition));
         }
     }
 
@@ -413,7 +410,9 @@ class Container
                     $dependencies[] = $param->getDefaultValue();
                 } else {
                     $c = $param->getClass();
-                    $dependencies[] = Instance::of($c === null ? null : $c->getName());
+                    $dependencies[] = Instance::of($c === null ? null : $c->getName(), function ($id) {
+                        return $this->get($id);
+                    });
                 }
             }
         }
@@ -429,7 +428,7 @@ class Container
      * @param array $dependencies the dependencies
      * @param ReflectionClass $reflection the class reflection associated with the dependencies
      * @return array the resolved dependencies
-     * @throws InvalidConfigException if a dependency cannot be resolved or if a dependency cannot be fulfilled.
+     * @throws Exception if a dependency cannot be resolved or if a dependency cannot be fulfilled.
      */
     protected function resolveDependencies($dependencies, $reflection = null)
     {
@@ -440,7 +439,7 @@ class Container
                 } elseif ($reflection !== null) {
                     $name = $reflection->getConstructor()->getParameters()[$index]->getName();
                     $class = $reflection->getName();
-                    throw new InvalidConfigException("Missing required parameter \"$name\" when instantiating \"$class\".");
+                    throw new Exception("Missing required parameter " . $name . " when instantiating " . $class . ".");
                 }
             }
         }
