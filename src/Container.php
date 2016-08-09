@@ -115,6 +115,23 @@ class Container
     private $_dependencies = [];
 
     /**
+     * Container constructor.
+     */
+    public function __construct(array $definitions = [])
+    {
+        foreach ($definitions as $name => $definition) {
+            $this->set($name, $definitions);
+        }
+    }
+    
+    public function __get($name)
+    {
+        if ($this->has($name)) {
+            return $this->get($name);
+        }
+    }
+
+    /**
      * Returns an instance of the requested class.
      *
      * You may provide constructor parameters (`$params`) and object configurations (`$config`)
