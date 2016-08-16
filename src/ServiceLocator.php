@@ -95,7 +95,7 @@ class ServiceLocator
             } else if (is_object($definition)) {
                 return $this->_components[$id] = $definition;
             } else {
-                if (isset($definition[0])) {
+                if (isset($definition[0]) && isset($definition['class'])) {
                     $class = $definition['class'];
                     unset($definition['class']);
                     return $this->_components[$id] = call_user_func_array([Creator::class, 'createObject'], array_merge([$class], $definition));

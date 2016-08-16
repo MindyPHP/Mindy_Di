@@ -25,7 +25,6 @@ class ConstructorArgument
 
     public function __construct($handlers = [])
     {
-        var_dump($handlers);
         $this->_handlers = $handlers;
     }
 
