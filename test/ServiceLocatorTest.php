@@ -19,6 +19,21 @@ class Dummy
 {
 }
 
+class ConstructorArgument
+{
+    private $_handlers = [];
+
+    public function __construct($handlers = [])
+    {
+        $this->_handlers = $handlers;
+    }
+
+    public function getHandlers()
+    {
+        return $this->_handlers;
+    }
+}
+
 class ServiceLocatorTest extends \PHPUnit_Framework_TestCase
 {
     public function testInit()
@@ -114,5 +129,13 @@ class ServiceLocatorTest extends \PHPUnit_Framework_TestCase
         $dummy = $locator->dummy;
         $this->assertEquals(2, count($locator->getComponents(true)));
         $this->assertEquals(1, count($locator->getComponents(false)));
+    }
+
+    public function testConstructorArgument()
+    {
+        $locator = new ServiceLocator([
+            'example' => ['class' => ConstructorArgument::class, [1, 2, 3]]
+        ]);
+        $this->assertEquals([1, 2, 3], $locator->example->getHandlers());
     }
 }
