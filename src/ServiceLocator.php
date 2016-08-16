@@ -90,12 +90,18 @@ class ServiceLocator
 
         if (isset($this->_definitions[$id])) {
             $definition = $this->_definitions[$id];
-            if ($definition instanceof Closure) {
-                return $this->_components[$id] = $definition->__invoke();
+            if (is_callable($definition)) {
+                return $this->_components[$id] = $definition();
             } else if (is_object($definition)) {
                 return $this->_components[$id] = $definition;
             } else {
-                return $this->_components[$id] = Creator::createObject($definition);
+                if (isset($definition[0])) {
+                    $class = $definition['class'];
+                    unset($definition['class']);
+                    return $this->_components[$id] = call_user_func_array([Creator::class, 'createObject'], array_merge([$class], $definition));
+                } else {
+                    return $this->_components[$id] = Creator::createObject($definition);
+                }
             }
         } elseif ($throwException) {
             throw new Exception("Unknown component ID: $id");
